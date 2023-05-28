@@ -1,0 +1,19 @@
+data:
+    name: UchuuUM
+
+param_names:
+- logM
+- conc
+
+data_names:
+- xproj
+- yproj
+- vlos
+
+priors:
+  low:
+  - 14
+  - 1
+  high:
+  - 15.3
+  - 14.6

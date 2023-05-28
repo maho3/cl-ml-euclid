@@ -1,0 +1,30 @@
+data:
+    name: Lorenzo
+
+param_names:
+- logM200
+- rs
+
+data_names:
+- x_pos
+- y_pos
+- vz
+
+priors:
+  low:
+  - 13.7
+  - 0.1
+  high:
+  - 14.7
+  - 0.3
+
+val:
+  sample_at:
+  - 5
+  - 10
+  Nclu: 100
+  Nsamp: 100
+
+example:
+  Nclu: 10
+  Nsamp: 1000

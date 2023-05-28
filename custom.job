@@ -1,0 +1,18 @@
+#PBS -N andrea
+#PBS -q batch
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=16,mem=64gb
+#PBS -j oe
+#PBS -o ${HOME}/data/jobout/cl-ml-euclid.log
+
+echo cd-ing...
+cd /home/mattho/git/cl-ml-euclid
+
+echo activating environment...
+source /data80/mattho/anaconda3/bin/activate /data80/mattho/anaconda3/envs/pt
+
+echo running script...
+python val.py --config configs/andrea.yaml
+
+
+echo done...

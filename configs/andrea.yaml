@@ -1,0 +1,33 @@
+data:
+    name: Andrea
+
+param_names:
+- logm200
+- r200
+
+data_names:
+- x
+- y
+- vrf
+
+priors:
+  low:
+  - 13.9
+  - 0.48
+  high:
+  - 14.8
+  - 1.15
+  
+val:
+  sample_at:
+  - 5
+  - 10
+  Nclu: 100
+  Nsamp: 100
+
+example:
+  sample_at:
+  - 5
+  - 10
+  Nclu: 10
+  Nsamp: 1000

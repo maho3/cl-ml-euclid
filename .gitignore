@@ -161,7 +161,7 @@ cython_debug/
 
 
 # Custom
-data/
-images/
-sbi-logs/
-
+data
+images
+sbi-logs
+saved_models
