@@ -3,7 +3,7 @@ data:
 
 param_names:
 - logm200
-- r200
+- logr200
 
 data_names:
 - x
@@ -13,21 +13,21 @@ data_names:
 priors:
   low:
   - 13.9
-  - 0.48
+  - -0.31
   high:
   - 14.8
-  - 1.15
+  - 0.05
   
 val:
   sample_at:
-  - 5
-  - 10
+  - 0.5
+  - 1
   Nclu: 100
   Nsamp: 100
 
 example:
   sample_at:
-  - 5
-  - 10
-  Nclu: 10
+  - 0.5
+  - 1
+  Nclu: 5
   Nsamp: 1000
