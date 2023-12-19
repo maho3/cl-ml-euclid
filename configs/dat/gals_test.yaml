@@ -1,0 +1,4 @@
+in_dir: './data/processed/FS2dC100'  # where to find the data
+
+x_file: 'x_batch_test.npy'  # file name of the data
+theta_file: 'theta_batch_test.npy'  # file name of the parameters
