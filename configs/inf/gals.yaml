@@ -1,5 +1,21 @@
 # Specify prior
 prior:
+  # module: 'ili.utils'
+  # class: 'IndependentTruncatedNormal'
+  # args:
+  #   loc: [13.6993]
+  #   scale: [0.3166]
+  #   low: [13.93]
+  #   high: [14.80]
+  
+prior:
+  module: 'ili.utils'
+  class: 'Uniform'
+  args:
+    low: [13.9]
+    high: [14.85]
+
+proposal:
   module: 'ili.utils'
   class: 'IndependentTruncatedNormal'
   args:
@@ -7,22 +23,6 @@ prior:
     scale: [0.3166]
     low: [13.93]
     high: [14.80]
-  
-# prior:
-#   module: 'ili.utils'
-#   class: 'Uniform'
-#   args:
-#     low: [13.93]
-#     high: [14.80]
-
-# proposal:
-#   module: 'ili.utils'
-#   class: 'IndependentTruncatedNormal'
-#   args:
-#     loc: [13.6993]
-#     scale: [0.3166]
-#     low: [13.93]
-#     high: [14.80]
 
 # Specify the inference model
 model:
