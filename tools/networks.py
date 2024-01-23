@@ -13,7 +13,7 @@ class DenseNetwork(torch.nn.Module):
         self.drop_p = drop_p
 
         self.global_aggr = aggr.MultiAggregation(
-            aggrs=['sum', 'mean', 'median', 'std', 'min', 'max'],
+            aggrs=['sum', 'mean', 'std', 'min', 'max'],
             mode='cat'
         )
         self._build_dnn(in_channels*len(self.global_aggr.aggrs))
@@ -34,8 +34,8 @@ class DenseNetwork(torch.nn.Module):
         x = self.fc2(x)
         return x
 
-    def global_features(self, x):
-        x = self.global_aggr(x)[0]
+    def global_features(self, x, ptr=None):
+        x = self.global_aggr(x, ptr=ptr)
         x = torch.nan_to_num(x, nan=1., posinf=1., neginf=1.)
         return x
 
@@ -55,7 +55,7 @@ class GATNetwork(DenseNetwork):
         self.gcn_heads = gcn_heads
 
         self.graph_aggr = aggr.MultiAggregation(
-            aggrs=['sum', 'mean', 'median', 'std', 'min',
+            aggrs=['sum', 'mean', 'std', 'min',
                    'max', aggr.SoftmaxAggregation(learn=True)],
             mode='cat'
         )
@@ -85,11 +85,18 @@ class GATNetwork(DenseNetwork):
         x = self.conv2(x, edge_index)
         return x
 
-    def forward(self, x, edge_index):
-        globfeat = self.global_features(x)
+    def forward(self, data):
+        features = data.x.float()
+        edge_index = data.edge_index.int()
+        if hasattr(data, 'ptr'):
+            ptr = data.ptr
+        else:
+            ptr = None
 
-        x = self.gnn(x, edge_index)
-        x = self.graph_aggr(x)[0]
+        globfeat = self.global_features(features, ptr)
+
+        x = self.gnn(features, edge_index)
+        x = self.graph_aggr(x, ptr=ptr)
         x = torch.cat([x, globfeat], dim=-1)
         x = self.dnn(x)
         return x
