@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
-from tools.embedding import DenseNetwork, GATNetwork, SAGENetwork
+from tools.networks import GATNetwork
 from ili.utils import Uniform, IndependentTruncatedNormal
 
 # set device
@@ -19,12 +19,13 @@ print('Using device:', device)
 # CONFIGURATION
 dname = 'FS2dC100'  # 'Lorenzo' #
 rmax = 1.5
+restore = True
 
 patience = 30
-lr = 1e-5
-prior = Uniform(low=0.1, high=1.0)
+lr = 2e-5
+prior = Uniform(low=[13.9], high=[14.85])
 proposal = IndependentTruncatedNormal(
-    low=0.1, high=1.0, loc=0.5, scale=0.1)
+    low=[13.93], high=[14.8], loc=[13.6993], scale=[0.3166])
 
 outdir = './saved_models/gnn_npe'
 os.makedirs(outdir, exist_ok=True)
@@ -115,7 +116,8 @@ optimizer = torch.optim.Adam(model.parameters(),
 def criterion(pred, true, reduction='mean'):
     pred, true = torch.atleast_2d(pred), torch.atleast_2d(true)
     # return F.mse_loss(pred, true, reduction=reduction)
-    return F.mse_loss(pred[:, 1], (true[:, 0]-pred[:, 0])**2, reduction=reduction)
+    return F.mse_loss(pred[:, 1], (true[:, 0]-pred[:, 0])**2,
+                      reduction=reduction)
 
 
 def train(model, optimizer, loader, device, bs=32, verbose=False):
@@ -133,9 +135,16 @@ def train(model, optimizer, loader, device, bs=32, verbose=False):
                 xi, edgei, thetai = next(train_iter)
             except StopIteration:
                 break
+            # forward pass
             xi, edgei, thetai = xi[0], edgei[0], thetai[0]
             out = model(xi, edgei)
-            loss += criterion(out, thetai, reduction='sum')
+
+            # calculate importance weighting (SNPE-B)
+            _th = thetai*t_std + t_mu
+            logw = prior.log_prob(_th)-proposal.log_prob(_th)
+
+            # calculate loss
+            loss += torch.exp(logw)*criterion(out, thetai, reduction='sum')
         loss.backward()
         loss_all += loss.item()
         optimizer.step()
@@ -146,21 +155,21 @@ def test(model, loader):
     model.eval()
     pred = torch.zeros((len(loader), 2), dtype=torch.float, device='cpu')
     true = torch.zeros((len(loader), 1), dtype=torch.float, device='cpu')
+    loss = 0
     with torch.no_grad():
         for i, (xi, edgei, thetai) in enumerate(loader):
             xi, edgei, thetai = xi[0], edgei[0], thetai[0]
             out = model(xi, edgei)
             pred[i] = out
             true[i] = thetai
-    return true, pred
 
+            # calculate importance weighting (SNPE-B)
+            _th = thetai*t_std + t_mu
+            logw = prior.log_prob(_th)-proposal.log_prob(_th)
 
-def predict(model, loader):
-    true, pred = test(model, loader)
-    true = true*t_std + t_mu
-    pred[:, 0] = pred*t_std + t_mu
-    pred[:, 1] = pred[:, 1]*(t_std**2)
-    return true, pred
+            # calculate loss
+            loss += torch.exp(logw)*criterion(out, thetai, reduction='sum')
+    return true, pred, loss.item()/len(loader.dataset)
 
 
 # train the model
@@ -170,43 +179,50 @@ trrec = []
 terec = []
 wait = 0
 valoss_min = np.inf
-for epoch in range(1000):
-    train_loss = train(model, optimizer, train_loader, device, verbose=True)
 
-    # test the model
-    true, pred = test(model, test_loader)
-    test_loss = criterion(pred, true, reduction='mean').item()
+if not restore:
+    for epoch in range(1000):
+        train_loss = train(model, optimizer, train_loader,
+                           device, verbose=True)
 
-    trrec.append(train_loss)
-    terec.append(test_loss)
-    print('Epoch: {:03d}, Train Loss: {:.7f}, Test Loss: {:.7f}'.format(
-        epoch, train_loss, test_loss))
+        # test the model
+        true, pred, test_loss = test(model, test_loader)
 
-    if test_loss < valoss_min*(1 - min_change):
-        wait = 0
-        valoss_min = test_loss
-        best_model_weights = model.state_dict()
-    else:
-        wait += 1
-    if wait > patience:
-        break
+        trrec.append(train_loss)
+        terec.append(test_loss)
+        print('Epoch: {:03d}, Train Loss: {:.7f}, Test Loss: {:.7f}'.format(
+            epoch, train_loss, test_loss))
 
-model.load_state_dict(best_model_weights)
+        if test_loss < valoss_min*(1 - min_change):
+            wait = 0
+            valoss_min = test_loss
+            best_model_weights = model.state_dict()
+        else:
+            wait += 1
+        if wait > patience:
+            break
 
-# save the model
-torch.save(model.state_dict(), join(outdir, 'model.pt'))
+    model.load_state_dict(best_model_weights)
 
-# save the training history
-summary = {
-    'train_loss': trrec,
-    'test_loss': terec,
-}
-json.dump(summary, open(join(outdir, 'summary.json'), 'w'))
+    # save the model
+    torch.save(model.state_dict(), join(outdir, 'model.pt'))
+
+    # save the training history
+    summary = {
+        'train_loss': trrec,
+        'test_loss': terec,
+    }
+    json.dump(summary, open(join(outdir, 'summary.json'), 'w'))
+else:
+    model.load_state_dict(torch.load(join(outdir, 'model.pt')))
+    summary = json.load(open(join(outdir, 'summary.json'), 'r'))
+    trrec = summary['train_loss']
+    terec = summary['test_loss']
 
 
 # predict on the test set
-def predict_numpy(model, loader):
-    true, pred = test(model, loader)
+def predict(model, loader):
+    true, pred, _ = test(model, loader)
     true = true.detach().cpu().numpy()
     pred = pred.detach().cpu().numpy()
 
@@ -216,7 +232,7 @@ def predict_numpy(model, loader):
     return true, pred
 
 
-true, pred = predict_numpy(model, test_loader)
+true, pred = predict(model, test_loader)
 
 
 # save the predictions

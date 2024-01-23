@@ -10,37 +10,32 @@ prior:
   
 prior:
   module: 'ili.utils'
-  class: 'Uniform'
+  class: 'IndependentNormal'
   args:
-    low: [13.9]
-    high: [14.85]
-
-proposal:
-  module: 'ili.utils'
-  class: 'IndependentTruncatedNormal'
-  args:
-    loc: [13.6993]
-    scale: [0.3166]
-    low: [13.93]
-    high: [14.80]
+    loc: [13.94]
+    scale: [0.373]
 
 # Specify the inference model
 model:
-  module: 'sbi.inference'
-  class: 'SNLE' # Likelihood Estimation
-  name: 'gals_nle'
+  engine: 'NLE' # Likelihood Estimation
   nets:
     - model: 'maf'  # Masked Autoregressive Flow
-      hidden_features: 50 
-      num_transforms: 6
-    - model: 'mdn'  # Mixture Density Network
-      hidden_features: 50 
-      num_components: 6
+      hidden_features: 8 
+      num_transforms: 3
+    - model: 'maf'  # Masked Autoregressive Flow
+      hidden_features: 8 
+      num_transforms: 3
+    - model: 'maf'  # Masked Autoregressive Flow
+      hidden_features: 8 
+      num_transforms: 3
+    - model: 'maf'  # Masked Autoregressive Flow
+      hidden_features: 8 
+      num_transforms: 3
 
 # Specify the neural training hyperparameters   
 train_args:
-  training_batch_size: 32
+  training_batch_size: 256
   learning_rate: 0.001
 
 device: 'cpu'  # Run on CPU
-output_path: './saved_models/gals_nle'  # Where to save the posterior
+out_dir: './saved_models/gals_nle'  # Where to save the posterior

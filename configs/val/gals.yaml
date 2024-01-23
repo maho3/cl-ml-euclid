@@ -1,7 +1,5 @@
-backend: 'sbi'  # sbi or pydelfi backend
-
-posterior_path: './saved_models/gals_nle/gals_nle_posterior.pkl'  # Path to posterior model
-output_path: './saved_models/gals_nle'  # Where to save the metrics
+posterior_file: 'posterior.pkl'  # Path to posterior model
+out_dir: './saved_models/gals_nle'  # Where to save the metrics
 style_path: './style.mcstyle'  # Optional matplotlib style file
 labels: ['logM200']  # Names of the parameters
 

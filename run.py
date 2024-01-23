@@ -2,7 +2,8 @@ import argparse
 from ili.dataloaders import StaticNumpyLoader
 from ili.inference.runner_sbi import SBIRunner
 from ili.validation.runner import ValidationRunner
-
+import warnings
+warnings.filterwarnings("ignore")
 
 if __name__ == '__main__':
     # parse arguments

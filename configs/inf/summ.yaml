@@ -1,68 +1,34 @@
 # Specify prior
 
-# prior:
-#   module: 'ili.utils'
-#   class: 'IndependentTruncatedNormal'
-#   args:
-#     loc: [13.6993]
-#     scale: [0.3166]
-#     low: [13.93]
-#     high: [14.80]
-  
 prior:
   module: 'ili.utils'
-  class: 'Uniform'
+  class: 'IndependentNormal'
   args:
-    low: [13.9]
-    high: [14.85]
-
-proposal:
-  module: 'ili.utils'
-  class: 'IndependentTruncatedNormal'
-  args:
-    loc: [13.6993]
-    scale: [0.3166]
-    low: [13.93]
-    high: [14.80]
-
-# embedding_net:
-#   module: 'ili.embedding'
-#   class: 'FCN'
-#   args:
-#     n_data: 19
-#     n_hidden: [64, 64]
-#     act_fn: "SiLU"
+    loc: [13.94]
+    scale: [0.373]
 
 # Specify the inference model
 model:
-  module: 'sbi.inference'
-  class: 'SNLE'  # Posterior Estimation
-  name: 'summ_nle'
+  engine: 'NLE'  # Posterior Estimation
   nets:
     - model: 'maf'  # Masked Autoregressive Flow
-      hidden_features: 50
-      num_transforms: 5
+      hidden_features: 8
+      num_transforms: 4
     - model: 'maf'  # Masked Autoregressive Flow
-      hidden_features: 50
-      num_transforms: 5
-    #   signature: "maf"
-    # - model: 'nsf'  # Neural Spline Flow
-    #   hidden_features: 50
-    #   num_transforms: 5 
-    #   signature: "nsf"
-    # - model: 'made'  # Neural Spline Flow
-    #   hidden_features: 50
-    #   num_transforms: 5 
-    #   signature: "made"
-    # - model: 'mdn'  # Mixture Density Network
-    #   hidden_features: 50 
-    #   num_components: 3
+      hidden_features: 8
+      num_transforms: 4
+    - model: 'maf'  # Masked Autoregressive Flow
+      hidden_features: 8
+      num_transforms: 4
+    - model: 'maf'  # Masked Autoregressive Flow
+      hidden_features: 8
+      num_transforms: 4
 
 # Specify the neural training hyperparameters
 train_args:
-  training_batch_size: 32
-  learning_rate: 0.0001
-  stop_after_epochs: 30
+  training_batch_size: 64
+  learning_rate: 0.001
+  stop_after_epochs: 50
 
 device: 'cpu'  # Run on CPU
-output_path: './saved_models/summ_nle'  # Where to save the posterior
+out_dir: './saved_models/summ_nle'  # Where to save the posterior
