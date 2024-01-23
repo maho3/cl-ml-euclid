@@ -3,6 +3,7 @@ from os.path import join
 import numpy as np
 import sklearn.neighbors as skn
 import pickle
+import argparse
 
 import torch
 from torch.utils import data
@@ -18,8 +19,15 @@ from ili.validation.metrics import PosteriorCoverage, PlotSinglePosterior
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using device:', device)
 
+
+# Parse arguments
+parser = argparse.ArgumentParser(
+    description="Run SBI inference for toy data.")
+parser.add_argument('--data', type=str, default='dC100')
+args = parser.parse_args()
+
 # CONFIGURATION
-dname = 'AMICOdC100'
+dname = f'AMICO{args.data}'
 rmax = 0.5
 bs = 16
 validation_fraction = 0.1
@@ -121,7 +129,8 @@ test_stage_loader = TorchLoader(test_loader, val_loader)
 
 # define an ili trainer
 runner = InferenceRunner.from_config(
-    'configs/inf/gnn.yaml', device=device
+    'configs/inf/gnn.yaml', device=device,
+    out_dir=f"./saved_models/gnn_npe_{args.data}"
 )
 posterior_ensemble, summaries = runner(loader=train_stage_loader)
 

@@ -12,10 +12,10 @@ embedding_net:
   class: 'GATNetwork'
   args:
     in_channels: 4
-    gcn_channels: [16, 16, 16]
-    gcn_heads: [8, 4, 1]
-    dense_channels: [16, 8, 8]
-    out_channels: 4
+    gcn_channels: [8, 4]
+    gcn_heads: [4, 1]
+    dense_channels: [16, 8]
+    out_channels: 8
 
 # Specify the inference model
 model:
@@ -23,12 +23,20 @@ model:
   engine: 'NPE'  # Posterior Estimation
   nets:
     - model: 'maf' 
-      hidden_features: 4
-      num_transforms: 2
+      hidden_features: 8
+      num_transforms: 4
       x_normalize: False
     - model: 'maf' 
-      hidden_features: 4
-      num_transforms: 2
+      hidden_features: 8
+      num_transforms: 4
+      x_normalize: False
+    - model: 'maf' 
+      hidden_features: 8
+      num_transforms: 4
+      x_normalize: False
+    - model: 'maf' 
+      hidden_features: 8
+      num_transforms: 4
       x_normalize: False
     # - model: 'nsf'  # Masked Autoregressive Flow
     #   hidden_features: 8
@@ -38,7 +46,7 @@ model:
 # Specify the neural training hyperparameters
 train_args:
   training_batch_size: 16
-  learning_rate: 0.00001
+  learning_rate: 0.0001
   stop_after_epochs: 50
 
 device: 'cpu'  # Run on CPU
