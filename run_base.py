@@ -9,6 +9,7 @@ from sklearn.linear_model import LinearRegression
 parser = argparse.ArgumentParser(
     description="Run SBI inference for toy data.")
 parser.add_argument('--data', type=str, default='dC100')
+parser.add_argument('--fold', type=int, default=0)
 args = parser.parse_args()
 
 dname = f'AMICO{args.data}'
@@ -19,16 +20,18 @@ weight = True
 # ~~~ load data ~~~
 datapath = join('data/processed', dname)
 print('Loading from:', datapath)
-x_train = np.load(join(datapath, 'x_batch_train.npy'), allow_pickle=True)
-theta_train = np.load(
-    join(datapath, 'theta_batch_train.npy'), allow_pickle=True)[:, 0]
-x_test = np.load(join(datapath, 'x_batch_test.npy'), allow_pickle=True)
-theta_test = np.load(join(datapath, 'theta_batch_test.npy'),
-                     allow_pickle=True)[:, 0]
+x = np.load(join(datapath, 'x_batch.npy'), allow_pickle=True)
+theta = np.load(join(datapath, 'theta_batch.npy'), allow_pickle=True)
+folds = np.load(join(datapath, 'folds_batch.npy'), allow_pickle=True)
+
+x_train = x[folds != args.fold]
+theta_train = theta[folds != args.fold]
+x_test = x[folds == args.fold]
+theta_test = theta[folds == args.fold]
 # x.shape=[(Ngals, N_feats) for i in Nsamp], [xami, yami, vlos, Pmem]
 
 # outdir
-outdir = f'saved_models/base_{args.data}'
+outdir = f'saved_models/base_{args.data}_f{args.fold}'
 print('Saving to:', outdir)
 os.makedirs(outdir, exist_ok=True)
 

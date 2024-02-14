@@ -12,40 +12,54 @@ embedding_net:
   class: 'GATNetwork'
   args:
     in_channels: 4
-    gcn_channels: [8, 4]
+    gcn_channels: [16, 16]
     gcn_heads: [4, 1]
     dense_channels: [16, 8]
     out_channels: 8
+    drop_p: 0.1
+    edge_attr: False
+
 
 # Specify the inference model
 model:
   backend: 'lampe'
   engine: 'NPE'  # Posterior Estimation
   nets:
-    - model: 'maf' 
+    - model: 'mdn' 
       hidden_features: 8
-      num_transforms: 4
+      num_components: 5
       x_normalize: False
     - model: 'maf' 
       hidden_features: 8
       num_transforms: 4
       x_normalize: False
-    - model: 'maf' 
-      hidden_features: 8
-      num_transforms: 4
-      x_normalize: False
-    - model: 'maf' 
-      hidden_features: 8
-      num_transforms: 4
-      x_normalize: False
-    # - model: 'nsf'  # Masked Autoregressive Flow
+    # - model: 'nsf' 
     #   hidden_features: 8
     #   num_transforms: 4
     #   x_normalize: False
+    # - model: 'nice' 
+    #   hidden_features: 8
+    #   num_transforms: 4
+    #   x_normalize: False
+    - model: 'gf' 
+      hidden_features: 8
+      num_transforms: 4
+      x_normalize: False
+    # - model: 'sospf' 
+    #   hidden_features: 8
+    #   num_transforms: 4
+    #   x_normalize: False
+    # - model: 'naf' 
+    #   hidden_features: 8
+    #   num_transforms: 4
+    #   x_normalize: False
+    # - model: 'unaf' 
+    #   hidden_features: 8
+      # num_transforms: 4
+      # x_normalize: False
 
 # Specify the neural training hyperparameters
 train_args:
-  training_batch_size: 16
   learning_rate: 0.0001
   stop_after_epochs: 50
 

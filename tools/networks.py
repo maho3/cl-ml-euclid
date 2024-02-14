@@ -48,11 +48,12 @@ class DenseNetwork(torch.nn.Module):
 class GATNetwork(DenseNetwork):
     def __init__(
         self, in_channels, gcn_channels, gcn_heads,
-        dense_channels, out_channels, drop_p=0.1
+        dense_channels, out_channels, drop_p=0.1, edge_attr=False
     ):
         super().__init__(in_channels, dense_channels, out_channels, drop_p)
         self.gcn_channels = gcn_channels
         self.gcn_heads = gcn_heads
+        self.edge_attr = edge_attr
 
         self.graph_aggr = aggr.MultiAggregation(
             aggrs=['sum', 'mean', 'std', 'min',
@@ -66,28 +67,38 @@ class GATNetwork(DenseNetwork):
 
     def _build_gnn(self):
         self.conv1 = gnn.GATv2Conv(
-            self.in_channels, self.gcn_channels[0], heads=self.gcn_heads[0])
+            self.in_channels, self.gcn_channels[0], heads=self.gcn_heads[0],
+            dropout=self.drop_p,
+            edge_dim=3 if self.edge_attr else None)
         self.convs = torch.nn.ModuleList(
             [gnn.GATv2Conv(self.gcn_channels[i]*self.gcn_heads[i],
-                           self.gcn_channels[i+1], heads=self.gcn_heads[i+1])
+                           self.gcn_channels[i+1], heads=self.gcn_heads[i+1],
+                           dropout=self.drop_p,
+                           edge_dim=3 if self.edge_attr else None)
              for i in range(len(self.gcn_channels)-2)]
         )
         self.conv2 = gnn.GATv2Conv(
             self.gcn_channels[-2]*self.gcn_heads[-2],
-            self.gcn_channels[-1], heads=self.gcn_heads[-1], concat=False)
+            self.gcn_channels[-1], heads=self.gcn_heads[-1],
+            dropout=self.drop_p,
+            concat=False, edge_dim=3 if self.edge_attr else None)
 
-    def gnn(self, x, edge_index):
-        x = F.relu(self.conv1(x, edge_index))
+    def gnn(self, x, edge_index, edge_attr=None):
+        x = F.relu(self.conv1(x, edge_index, edge_attr))
         x = self.dropout(x)
         for conv in self.convs:
-            x = F.relu(conv(x, edge_index))
+            x = F.relu(conv(x, edge_index, edge_attr))
             x = self.dropout(x)
-        x = self.conv2(x, edge_index)
+        x = self.conv2(x, edge_index, edge_attr)
         return x
 
     def forward(self, data):
         features = data.x.float()
-        edge_index = data.edge_index.int()
+        edge_index = data.edge_index.long()
+        if hasattr(data, 'edge_attr') and self.edge_attr:
+            edge_attr = data.edge_attr.float()
+        else:
+            edge_attr = None
         if hasattr(data, 'ptr'):
             ptr = data.ptr
         else:
@@ -95,7 +106,7 @@ class GATNetwork(DenseNetwork):
 
         globfeat = self.global_features(features, ptr)
 
-        x = self.gnn(features, edge_index)
+        x = self.gnn(features, edge_index, edge_attr)
         x = self.graph_aggr(x, ptr=ptr)
         x = torch.cat([x, globfeat], dim=-1)
         x = self.dnn(x)

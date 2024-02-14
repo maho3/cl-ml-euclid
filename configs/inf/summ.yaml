@@ -17,12 +17,12 @@ model:
     - model: 'maf'  # Masked Autoregressive Flow
       hidden_features: 8
       num_transforms: 4
-    - model: 'maf'  # Masked Autoregressive Flow
-      hidden_features: 8
-      num_transforms: 4
-    - model: 'maf'  # Masked Autoregressive Flow
-      hidden_features: 8
-      num_transforms: 4
+    # - model: 'maf'  # Masked Autoregressive Flow
+    #   hidden_features: 8
+    #   num_transforms: 4
+    # - model: 'maf'  # Masked Autoregressive Flow
+    #   hidden_features: 8
+    #   num_transforms: 4
 
 # Specify the neural training hyperparameters
 train_args:
