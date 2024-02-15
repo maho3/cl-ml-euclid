@@ -13,7 +13,7 @@ parser.add_argument('--fold', type=int, default=0)
 args = parser.parse_args()
 
 dname = f'AMICO{args.data}'
-vcut = 2e3
+vcut = 1e3
 weight = True
 
 
@@ -102,7 +102,6 @@ print('Fitting PAMICO.')
 
 
 def summ(x):
-    # gapper
     return np.sum(x)
 
 
