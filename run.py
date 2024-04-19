@@ -25,7 +25,7 @@ if __name__ == '__main__':
     val = f'./configs/val/{args.model}.yaml'
 
     # load training dataloader
-    in_dir = f"./data/processed/AMICO{args.data}"
+    in_dir = f"./data/processed/APR24{args.data}"
     if args.model == 'summ':
         x = np.load(f"{in_dir}/x_sum.npy", allow_pickle=True)
         theta = np.load(f"{in_dir}/theta_batch.npy", allow_pickle=True)
