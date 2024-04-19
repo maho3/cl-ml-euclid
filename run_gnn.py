@@ -1,10 +1,4 @@
-
-from ili.validation.metrics import PosteriorCoverage, PlotSinglePosterior
-from ili.dataloaders import TorchLoader
-from ili.inference import InferenceRunner
-from torch_geometric.loader.dataloader import Collater
-from torch_geometric.data import Data as PYGData
-from torch.utils import data
+import os
 import torch
 from os.path import join
 import numpy as np
@@ -12,11 +6,15 @@ import sklearn.neighbors as skn
 import pickle
 import argparse
 
+from ili.validation.metrics import PosteriorCoverage, PlotSinglePosterior
+from ili.dataloaders import TorchLoader
+from ili.inference import InferenceRunner
+from torch_geometric.loader.dataloader import Collater
+from torch_geometric.data import Data as PYGData
+from torch.utils import data
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-mpl.style.use('style.mcstyle')
-
-
 mpl.style.use('style.mcstyle')
 
 # set device
@@ -29,13 +27,20 @@ parser = argparse.ArgumentParser(
     description="Run SBI inference for toy data.")
 parser.add_argument('--data', type=str, default='dC100')
 parser.add_argument('--fold', type=int, default=0)
+parser.add_argument('--from_scratch', type=int, default=1)
 args = parser.parse_args()
 
 # CONFIGURATION
-dname = f'AMICO{args.data}'
+dname = f'APR24{args.data}'
 rmax = 0.5
 bs = 64
 validation_fraction = 0.1
+
+# specify directories
+out_dir = f"./saved_models/apr24_gnn_npe_{args.data}_f{args.fold}"
+if args.from_scratch==0 and os.path.exists(f"{out_dir}/posterior.pkl"):
+    print('Skipping inference, posterior already exists.')
+    exit()
 
 
 # load data
@@ -149,7 +154,6 @@ train_stage_loader = TorchLoader(train_loader, val_loader)
 test_stage_loader = TorchLoader(test_loader, val_loader)
 
 # define an ili trainer
-out_dir = f"./saved_models/gnn_npe_{args.data}_f{args.fold}"
 runner = InferenceRunner.from_config(
     'configs/inf/gnn.yaml', device=device,
     out_dir=out_dir

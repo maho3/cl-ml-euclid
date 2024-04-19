@@ -64,4 +64,4 @@ train_args:
   stop_after_epochs: 50
 
 device: 'cpu'  # Run on CPU
-out_dir: './saved_models/gnn_npe'  # Where to save the posterior
+out_dir: './saved_models/gnn_npe_apr24'  # Where to save the posterior

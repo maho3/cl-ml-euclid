@@ -31,4 +31,4 @@ train_args:
   stop_after_epochs: 50
 
 device: 'cpu'  # Run on CPU
-out_dir: './saved_models/summ_nle'  # Where to save the posterior
+out_dir: './saved_models/summ_nle_apr24'  # Where to save the posterior

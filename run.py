@@ -1,3 +1,4 @@
+import os
 import argparse
 import numpy as np
 from ili.dataloaders import NumpyLoader
@@ -18,14 +19,22 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='summ')
     parser.add_argument('--data', type=str, default='dC100')
     parser.add_argument('--fold', type=int, default=0)
+    parser.add_argument('--from_scratch', type=int, default=1)
     args = parser.parse_args()
     train = f'./configs/dat/{args.model}_train.yaml'
     test = f'./configs/dat/{args.model}_test.yaml'
     inf = f'./configs/inf/{args.model}.yaml'
     val = f'./configs/val/{args.model}.yaml'
 
-    # load training dataloader
+    # specify directories
     in_dir = f"./data/processed/APR24{args.data}"
+    out_dir = f"./saved_models/apr24_{args.model}_nle_{args.data}_f{args.fold}"
+    if args.from_scratch==0 and os.path.exists(f"{out_dir}/posterior.pkl"):
+        print('Skipping inference, posterior already exists.')
+        exit()
+
+    # load training dataloader
+    print(f"Loading data from {in_dir}")
     if args.model == 'summ':
         x = np.load(f"{in_dir}/x_sum.npy", allow_pickle=True)
         theta = np.load(f"{in_dir}/theta_batch.npy", allow_pickle=True)
@@ -46,7 +55,7 @@ if __name__ == '__main__':
     test_loader = NumpyLoader(x[mask], theta[mask])
 
     # train a model to infer x -> theta. save it as toy/posterior.pkl
-    out_dir = f"./saved_models/{args.model}_nle_{args.data}_f{args.fold}"
+    print(f"Saving model to {out_dir}")
     runner = SBIRunner.from_config(
         inf, out_dir=out_dir)
     posterior, summary = runner(loader=train_loader)

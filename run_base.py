@@ -12,7 +12,7 @@ parser.add_argument('--data', type=str, default='dC100')
 parser.add_argument('--fold', type=int, default=0)
 args = parser.parse_args()
 
-dname = f'AMICO{args.data}'
+dname = f'APR24{args.data}'
 vcut = 1e3
 weight = True
 
@@ -31,7 +31,7 @@ theta_test = theta[folds == args.fold]
 # x.shape=[(Ngals, N_feats) for i in Nsamp], [xami, yami, vlos, Pmem]
 
 # outdir
-outdir = f'saved_models/base_{args.data}_f{args.fold}'
+outdir = f'saved_models/apr24_base_{args.data}_f{args.fold}'
 print('Saving to:', outdir)
 os.makedirs(outdir, exist_ok=True)
 
@@ -48,12 +48,12 @@ x_train = [cut(x) for x in x_train]
 x_test = [cut(x) for x in x_test]
 
 # ~~~ remove <2 galaxies ~~~
-print('Removing samples with <2 galaxies.')
-mask = [len(x) > 1 for x in x_train]
+print('Removing samples with <3 galaxies.')
+mask = [len(x) > 2 for x in x_train]
 x_train = [x for x, m in zip(x_train, mask) if m]
 theta_train = [x for x, m in zip(theta_train, mask) if m]
 
-mask = [len(x) > 1 for x in x_test]
+mask = [len(x) > 2 for x in x_test]
 x_test = [x for x, m in zip(x_test, mask) if m]
 theta_test = [x for x, m in zip(theta_test, mask) if m]
 
