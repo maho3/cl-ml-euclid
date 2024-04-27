@@ -23,11 +23,15 @@ print('Loading from:', datapath)
 x = np.load(join(datapath, 'x_batch.npy'), allow_pickle=True)
 theta = np.load(join(datapath, 'theta_batch.npy'), allow_pickle=True)
 folds = np.load(join(datapath, 'folds_batch.npy'), allow_pickle=True)
+ids = np.load(join(datapath, 'ids_batch.npy'), allow_pickle=True)
 
+# split
 x_train = x[folds != args.fold]
 theta_train = theta[folds != args.fold]
+ids_train = ids[folds != args.fold]
 x_test = x[folds == args.fold]
 theta_test = theta[folds == args.fold]
+ids_test = ids[folds == args.fold]
 # x.shape=[(Ngals, N_feats) for i in Nsamp], [xami, yami, vlos, Pmem]
 
 # outdir
@@ -52,10 +56,12 @@ print('Removing samples with <3 galaxies.')
 mask = [len(x) > 2 for x in x_train]
 x_train = [x for x, m in zip(x_train, mask) if m]
 theta_train = [x for x, m in zip(theta_train, mask) if m]
+ids_train = [x for x, m in zip(ids_train, mask) if m]
 
 mask = [len(x) > 2 for x in x_test]
 x_test = [x for x, m in zip(x_test, mask) if m]
 theta_test = [x for x, m in zip(theta_test, mask) if m]
+ids_test = [x for x, m in zip(ids_test, mask) if m]
 
 
 # ~~~ M-sig ~~~
@@ -93,7 +99,8 @@ filename = join(outdir, 'msig.npz')
 out = np.savez(
     filename,
     coef=coef, intercept=intercept, std=std,
-    pred=pred, true=theta_test
+    pred=pred, true=theta_test,
+    ids=ids_test
 )
 
 
@@ -119,5 +126,6 @@ filename = join(outdir, 'Pamico.npz')
 out = np.savez(
     filename,
     coef=coef, intercept=intercept, std=std,
-    pred=pred, true=theta_test
+    pred=pred, true=theta_test,
+    ids=ids_test
 )
