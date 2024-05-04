@@ -4,8 +4,8 @@ prior:
   module: 'ili.utils'
   class: 'IndependentNormal'
   args:
-    loc: [13.94]
-    scale: [0.373]
+    loc: [13.776]
+    scale: [0.3479]
 
 # Specify the inference model
 model:
@@ -14,15 +14,9 @@ model:
     - model: 'maf'  # Masked Autoregressive Flow
       hidden_features: 8
       num_transforms: 4
-    - model: 'maf'  # Masked Autoregressive Flow
+    - model: 'nsf'  # Neural Spline Flow
       hidden_features: 8
       num_transforms: 4
-    # - model: 'maf'  # Masked Autoregressive Flow
-    #   hidden_features: 8
-    #   num_transforms: 4
-    # - model: 'maf'  # Masked Autoregressive Flow
-    #   hidden_features: 8
-    #   num_transforms: 4
 
 # Specify the neural training hyperparameters
 train_args:

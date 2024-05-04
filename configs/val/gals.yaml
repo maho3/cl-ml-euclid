@@ -30,6 +30,6 @@ metrics:
       sample_method: 'slice_np_vectorized'
       sample_params:
         num_chains: 4
-        burn_in: 20
+        burn_in: 100
         thin: 5
       plot_list: ["coverage", "histogram", "predictions", "tarp"]

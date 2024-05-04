@@ -1,6 +1,6 @@
 #PBS -N CL-ML-EUCLID
 #PBS -q batch
-#PBS -l walltime=8:00:00
+#PBS -l walltime=12:00:00
 #PBS -l nodes=1:ppn=16,mem=32gb
 #PBS -t 0-9
 #PBS -j oe
@@ -17,6 +17,7 @@ echo "Loading modules"
 module load cuda
 source /data80/mattho/anaconda3/bin/activate
 conda activate ili-torch
+export OMP_NUM_THREADS=1
 
 # Run the model
 echo "Running model $MODEL on data $DATA"

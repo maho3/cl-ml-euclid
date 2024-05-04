@@ -29,8 +29,9 @@ if __name__ == '__main__':
     # specify directories
     in_dir = f"./data/processed/APR24{args.data}"
     out_dir = f"./saved_models/apr24_{args.model}_nle_{args.data}_f{args.fold}"
-    if args.from_scratch==0 and os.path.exists(f"{out_dir}/posterior.pkl"):
-        print('Skipping inference, posterior already exists.')
+    sfile = f"{out_dir}/posterior_samples.npy"
+    if args.from_scratch == 0 and os.path.exists(sfile):
+        print(f'Skipping inference, samples already exist at {sfile}.')
         exit()
 
     # load training dataloader
@@ -54,22 +55,25 @@ if __name__ == '__main__':
     mask = folds == args.fold
     test_loader = NumpyLoader(x[mask], theta[mask])
 
-    # train a model to infer x -> theta. save it as toy/posterior.pkl
-    print(f"Saving model to {out_dir}")
-    runner = SBIRunner.from_config(
-        inf, out_dir=out_dir)
-    posterior, summary = runner(loader=train_loader)
+    if args.from_scratch == 0 and os.path.exists(f"{out_dir}/posterior.pkl"):
+        pass
+    else:
+        # train a model to infer x -> theta. save it as toy/posterior.pkl
+        print(f"Saving model to {out_dir}")
+        runner = SBIRunner.from_config(
+            inf, out_dir=out_dir)
+        posterior, summary = runner(loader=train_loader)
 
-    # plot the loss
-    f = plt.figure()
-    for i, x in enumerate(summary):
-        plt.plot(x['training_log_probs'], label=f'train {i}', c=f'C{i}')
-        plt.plot(x['validation_log_probs'],
-                 label=f'val {i}', c=f'C{i}', ls='--')
-    plt.legend()
-    plt.xlabel('Epoch')
-    plt.ylabel('Log probability')
-    f.savefig(f"{out_dir}/loss.png")
+        # plot the loss
+        f = plt.figure()
+        for i, x in enumerate(summary):
+            plt.plot(x['training_log_probs'], label=f'train {i}', c=f'C{i}')
+            plt.plot(x['validation_log_probs'],
+                     label=f'val {i}', c=f'C{i}', ls='--')
+        plt.legend()
+        plt.xlabel('Epoch')
+        plt.ylabel('Log probability')
+        f.savefig(f"{out_dir}/loss.png")
 
     # # use the trained posterior model to predict on a single example from
     # # the test set

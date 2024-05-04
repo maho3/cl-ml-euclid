@@ -38,7 +38,7 @@ validation_fraction = 0.1
 
 # specify directories
 out_dir = f"./saved_models/apr24_gnn_npe_{args.data}_f{args.fold}"
-if args.from_scratch==0 and os.path.exists(f"{out_dir}/posterior.pkl"):
+if args.from_scratch == 0 and os.path.exists(f"{out_dir}/posterior_samples.npy"):
     print('Skipping inference, posterior already exists.')
     exit()
 
