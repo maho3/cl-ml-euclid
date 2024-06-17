@@ -115,7 +115,13 @@ def summ(x):
 feat_train = np.log10([summ(x[:, 3]) for x in x_train]).reshape(-1, 1)
 feat_test = np.log10([summ(x[:, 3]) for x in x_test]).reshape(-1, 1)
 
-lr = LinearRegression().fit(feat_train, theta_train)
+if args.data[0] == 'w':
+    fit_min = np.log10(1)
+elif args.data[0] == 'd':
+    fit_min = np.log10(10)
+mask = feat_train[:, 0] > fit_min
+
+lr = LinearRegression().fit(feat_train[mask], np.array(theta_train)[mask])
 coef, intercept = lr.coef_, lr.intercept_
 
 pred = lr.predict(feat_test)
