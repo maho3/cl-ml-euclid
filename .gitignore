@@ -168,4 +168,6 @@ saved_models
 .DS_Store
 .vscode
 figures
+diagram
+saved_samples/
 
