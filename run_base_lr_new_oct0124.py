@@ -26,7 +26,8 @@ metas = np.load(join(datapath, 'metas_batch.npy'),
 
 # ~~~ filter ~~~
 min_richness = 3
-mask = metas[:, 3] >= min_richness
+mask = metas[:, 5] >= min_richness
+mask &= metas[:, 4] > 0  # non-zero sigv
 theta = theta[mask]
 folds = folds[mask]
 ids = ids[mask]
@@ -49,8 +50,8 @@ os.makedirs(outdir, exist_ok=True)
 
 # ~~~ M-sig ~~~
 print('Fitting M-sig.')
-feat_train = meta_train[:, 2].reshape(-1, 1)
-feat_test = meta_test[:, 2].reshape(-1, 1)
+feat_train = meta_train[:, 4].reshape(-1, 1)
+feat_test = meta_test[:, 4].reshape(-1, 1)
 feat_train, feat_test = map(np.log10, [feat_train, feat_test])
 
 lr = LinearRegression().fit(feat_train, theta_train)
@@ -73,8 +74,8 @@ out = np.savez(
 # ~~~ PAMICO ~~~
 print('Fitting spectroscopic richness.')
 
-feat_train = np.log10(meta_train[:, 3]).reshape(-1, 1)
-feat_test = np.log10(meta_test[:, 3]).reshape(-1, 1)
+feat_train = np.log10(meta_train[:, 5]).reshape(-1, 1)
+feat_test = np.log10(meta_test[:, 5]).reshape(-1, 1)
 feat_train, feat_test = map(np.log10, [feat_train, feat_test])
 
 lr = LinearRegression().fit(feat_train, theta_train)

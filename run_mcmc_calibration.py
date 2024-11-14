@@ -64,7 +64,11 @@ for d in datanames:
 
         # load
         for f in folds:
-            dirname = f'apr24_{r}_{d}_f{f}'
+            if r == 'gnn_npe':
+                dirname = f'oct02_{r}_{d}_f{f}'
+            else:
+                dirname = f'apr24_{r}_{d}_f{f}'
+            # dirname = f'apr24_{r}_{d}_f{f}'
             if r == 'base':
                 # Msig
                 samplefile = join(mdir, dirname, 'msig.npz')
@@ -97,12 +101,6 @@ for d in datanames:
                 s = s[:, :Nsamp]  # subsample if necessary
                 preds[d][r][fold[d] == f] = s
 
-# load mamposst
-mamnames = {
-    'wC50': 'wide50', 'wC100': 'wide100', 'dC50': 'deep50', 'dC100': 'deep100'
-}
-modeldir = './saved_models/mamposst/'
-
 
 def r2logm(r):
     # see preprocessing.ipynb for this measurement
@@ -110,13 +108,18 @@ def r2logm(r):
     intercept = -5.30640
     return (np.log10(r)-intercept)/coef
 
+# load mamposst
 
-for k in datanames:
-    v = mamnames[k]
-    isamp = pd.read_csv(join(modeldir, f'result_MockFS_NewAMICO_{v}CUT.dat'),
+
+mamnames = {
+    'wC50': 'wide50', 'wC100': 'wide100', 'dC50': 'deep50', 'dC100': 'deep100'
+}
+modeldir = './saved_models/mamposst_nov1324/'
+
+for k, v in mamnames.items():
+    isamp = pd.read_csv(join(modeldir, f'result_MockFS_NewAMICO_{v}.dat'),
                         delimiter=' ', skipinitialspace=True)
     isamp['id'] = isamp['#ClusterID'].astype(int)
-    isamp
     # convert r200 to logm
     for c in isamp.columns:
         if 'r200' not in c:
@@ -126,10 +129,10 @@ for k in datanames:
     # put in preds
     preds[k]['mamp'] = np.ones((Ndata[k], 5))*np.nan
     place_ids = np.searchsorted(ids[k], isamp['id'].values)
+    mask = place_ids < Ndata[k]
     _s = isamp[['logmlow(68)', 'logmup(68)', 'logmlow(95)',
                 'logmup(95)', 'logmMAM']].values
-    preds[k]['mamp'][place_ids] = _s
-
+    preds[k]['mamp'][place_ids[mask]] = _s[mask]
 
 # calculate percentiles from predictions
 q = 100*np.array([0.16, 0.84, 0.5, 0.025, 0.975])

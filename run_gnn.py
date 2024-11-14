@@ -32,12 +32,13 @@ args = parser.parse_args()
 
 # CONFIGURATION
 dname = f'APR24{args.data}'
+savename = 'oct02'
 rmax = 0.5
 bs = 64
 validation_fraction = 0.1
 
 # specify directories
-out_dir = f"./saved_models/apr24_gnn_npe_{args.data}_f{args.fold}"
+out_dir = f"./saved_models/{savename}_gnn_npe_{args.data}_f{args.fold}"
 if args.from_scratch == 0 and os.path.exists(f"{out_dir}/posterior_samples.npy"):
     print('Skipping inference, posterior already exists.')
     exit()
@@ -49,6 +50,8 @@ print('Loading from:', datapath)
 x = np.load(join(datapath, 'x_batch.npy'), allow_pickle=True)
 theta = np.load(join(datapath, 'theta_batch.npy'), allow_pickle=True)
 folds = np.load(join(datapath, 'folds_batch.npy'), allow_pickle=True)
+
+x = np.array([t[:, :3] for t in x], dtype=object)  # ignore richness dependence
 
 x_train = x[folds != args.fold]
 theta_train = theta[folds != args.fold]

@@ -11,7 +11,7 @@ embedding_net:
   module: 'tools.networks'
   class: 'GATNetwork'
   args:
-    in_channels: 4
+    in_channels: 3
     gcn_channels: [16, 16]
     gcn_heads: [4, 1]
     dense_channels: [16, 8]
@@ -25,26 +25,26 @@ model:
   backend: 'lampe'
   engine: 'NPE'  # Posterior Estimation
   nets:
-    - model: 'maf' 
+    # - model: 'maf' 
+    #   hidden_features: 8
+    #   num_transforms: 4
+    #   x_normalize: False
+    - model: 'nsf' 
       hidden_features: 8
       num_transforms: 4
       x_normalize: False
-    # - model: 'nsf' 
-    #   hidden_features: 8
-    #   num_transforms: 4
-    #   x_normalize: False
-    # - model: 'nice' 
-    #   hidden_features: 8
-    #   num_transforms: 4
-    #   x_normalize: False
+    - model: 'nice' 
+      hidden_features: 8
+      num_transforms: 4
+      x_normalize: False
     - model: 'gf' 
       hidden_features: 8
       num_transforms: 4
       x_normalize: False
-    - model: 'cnf' 
-      hidden_features: 8
-      num_transforms: 4
-      x_normalize: False
+    # - model: 'cnf' 
+    #   hidden_features: 8
+    #   num_transforms: 4
+    #   x_normalize: False
     # - model: 'sospf' 
     #   hidden_features: 8
     #   num_transforms: 4
@@ -60,7 +60,7 @@ model:
 
 # Specify the neural training hyperparameters
 train_args:
-  learning_rate: 0.0001
+  learning_rate: 0.0002
   stop_after_epochs: 50
 
 device: 'cpu'  # Run on CPU
