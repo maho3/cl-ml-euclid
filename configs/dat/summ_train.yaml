@@ -1,4 +1,4 @@
-in_dir: './data/processed/AMICOdC100'  # where to find the data
+in_dir: './data/processed/APR24dC100'  # where to find the data
 
 x_file: 'x_sum_train.npy'  # file name of the data
 theta_file: 'theta_batch_train.npy'  # file name of the parameters
