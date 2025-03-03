@@ -39,7 +39,11 @@ def binned_plot(X, Y, n=10, percentiles=[0, 34],
         else:
             raise Exception('Percentile > 50')
 
-    bin_edges = np.linspace(X.min()*0.9999, X.max()*1.0001, n+1)
+    if isinstance(n, int):
+        bin_edges = np.linspace(X.min()*0.9999, X.max()*1.0001, n+1)
+    else:
+        bin_edges = n
+        n = len(bin_edges) - 1
 
     dtype = [(str(i), 'f') for i in calc_percent]
     bin_data = np.zeros(shape=(n,), dtype=dtype)
