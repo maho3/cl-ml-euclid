@@ -1,10 +1,13 @@
 
 
+from scipy.stats import skewnorm
+from scipy.optimize import minimize
 import argparse
 import pandas as pd
 from collections import defaultdict
 import numpy as np
 from os.path import join
+import tqdm
 import os
 import jax
 import jax.numpy as jnp
@@ -13,8 +16,9 @@ import numpyro
 import numpyro.distributions as dist
 from numpyro.infer import MCMC, NUTS
 from numpyro.infer.util import log_likelihood as calc_loglik
+import warnings
 numpyro.set_host_device_count(5)
-
+warnings.filterwarnings("ignore")
 
 # ~~~ parse arguments ~~~
 parser = argparse.ArgumentParser(
@@ -114,7 +118,7 @@ def r2logm(r):
 mamnames = {
     'wC50': 'wide50', 'wC100': 'wide100', 'dC50': 'deep50', 'dC100': 'deep100'
 }
-modeldir = './saved_models/mamposst_nov1324/'
+modeldir = './saved_models/mamposst_newprior_dec1824'  # mamposst_nov1324/'
 
 for k, v in mamnames.items():
     isamp = pd.read_csv(join(modeldir, f'result_MockFS_NewAMICO_{v}.dat'),
@@ -228,6 +232,24 @@ def run_mcmc(samps, lambs, zs, l0, z0, m0, sig0,
     return mcmc.get_samples()
 
 
+def fit_skewed_normal(p16, p50, p84):
+    target_percentiles = [0.16, 0.50, 0.84]
+    observed_values = [p16, p50, p84]
+
+    def objective(params):
+        loc, scale, alpha = params
+        if scale <= 0:
+            return np.inf
+        skewed_gaussian = skewnorm(alpha, loc=loc, scale=scale)
+        calculated_values = skewed_gaussian.ppf(target_percentiles)
+        return np.sum((calculated_values - observed_values) ** 2)
+
+    initial_guess = [p50, (p84 - p16) / 2, 0.5]
+    result = minimize(objective, initial_guess)
+    loc, scale, alpha = result.x
+    return skewnorm(alpha, loc=loc, scale=scale)
+
+
 # Grab relevant data
 # d = 'dC100'
 # m = 'gnn_npe'
@@ -240,8 +262,14 @@ if m in ['msig', 'pamico']:
 elif m == 'mamp':
     ps = preds[d][m]
     p16, p84, p50 = ps[:, 0], ps[:, 1], ps[:, 4]
-    samps = p50[:, None] + (p84-p16)[:, None]/2 * \
-        np.random.randn(len(p50), Nsamp)
+    samps = []
+    for i in tqdm.tqdm(range(len(p16))):
+        if np.isnan(p16[i]):
+            samps.append(np.nan*np.ones(Nsamp))
+            continue
+        rvdist = fit_skewed_normal(p16[i], p50[i], p84[i])
+        samps.append(rvdist.rvs(Nsamp))
+    samps = np.array(samps)
 elif m != 'true':
     samps = preds[d][m][..., 0]
 else:

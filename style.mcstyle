@@ -36,3 +36,5 @@ savefig.edgecolor: white
 savefig.facecolor: white
 
 axes.grid: True
+grid.linewidth: 0.5
+grid.linestyle: --
