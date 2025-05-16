@@ -38,3 +38,6 @@ savefig.facecolor: white
 axes.grid: True
 grid.linewidth: 0.5
 grid.linestyle: --
+
+pdf.fonttype: 42
+ps.fonttype: 42

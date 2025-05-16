@@ -205,7 +205,7 @@ def operand(m, lambs, zs, l0, z0, m0, sig0, sigl, A, B, C):
 def log_likelihood(samps, lambs, zs, l0, z0, m0, sig0, sigl, A, B, C):
     to_sum = operand(samps, lambs, zs, l0, z0, m0, sig0, sigl, A, B, C)
     summed = logsumexp(to_sum, axis=1)
-    out = -2*jnp.log(sigl) + jnp.mean(summed)
+    out = -jnp.log(sigl) + jnp.mean(summed)
     return out
 
 
