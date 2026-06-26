@@ -2,7 +2,7 @@
 
 ## Setup
 
-We are given per-cluster mass posteriors $p(m\mid x)$ from some mass model (in these tests,
+We have per-cluster mass posteriors $p(m\mid x)$ from some mass model (in these tests,
 *Graph-Net* / `gnn_npe`, run on the *Euclid* deep-100% mock), and we want to use
 them to constrain the photometric-richness–mass relation. The difficulty is that
 the mass estimates are noisy and, as we will see, biased in ways that are
@@ -21,7 +21,7 @@ $\hat m$ the estimate, $\lambda\equiv\lambda_{\rm phot}$ the photometric richnes
 and $\zeta\equiv\log_{10}\frac{1+z}{1+z_0}$ the redshift variable, with pivots
 $m_0=13.78$ and $z_0=0.82$. The forward relation has intercept $\pi_0$, mass slope
 $F_m$, redshift slope $G_z$, and intrinsic scatter $\sigma_\lambda$. Where a model
-requires calibration, we reserve 10% of the clusters as a calibration set whose
+requires calibration, I reserve 10% of the clusters as a calibration set whose
 true masses are known.
 
 ---
@@ -36,7 +36,7 @@ linear in log-richness and in redshift. The mass estimate $\hat m$ is treated as
 noisy measurement of $m$.
 
 Because this likelihood conditions on richness, each cluster's mass posterior was
-itself produced under some inference prior $p(m)$, which we have to divide back out
+itself produced under some inference prior $p(m)$, which I have to divide back out
 before reweighting by the relation — otherwise the prior would be counted twice.
 
 <details><summary>Likelihood</summary>
@@ -60,10 +60,8 @@ with parameters $\theta=\{A,\ B\,(=\!F_\lambda),\ C\,(=\!G_z),\ \sigma\}$.
 ![scaling](plots/M1_inverse_scaling.png)
 
 The predicted and true contours do not line up — the mass–richness slope $B$ is the
-clearest offender. So the inverse parametrisation, fed our imperfect masses, does
-not return the relation we would get from true masses. Looking at how the
-literature handles this, the more common choice is a forward model, which we turn
-to next.
+clearest offender. So the inverse parametrisation, fed my imperfect masses, does
+not return the relation I would get from true masses. After a lot of tweaking, I couldn't figure out a way to make it work. I then looked throughout the literature on how to handle this. The more common choice is a forward model, which I tried next.
 
 ---
 
@@ -73,11 +71,13 @@ to next.
 
 In the forward direction we instead model the distribution of the observable
 richness given the mass, $p(\log_{10}\lambda\mid m,z)$. This is the standard choice
-in cluster cosmology: the scatter we are modelling is the physical scatter of
-richness at fixed mass, and the mass estimates enter only as something we
-marginalise over. In this first version we assume the population of masses is
-described by the same prior $p(m)$ used in the inference, in which case the prior
-ratio cancels and the likelihood reduces to the richness residual alone.
+in cluster cosmology — modelling the conditional richness distribution as Gaussian
+in log with an intrinsic scatter (e.g. [Murata et al. 2018](https://arxiv.org/abs/1707.01907); [Costanzi et al. 2019](https://arxiv.org/abs/1810.09456)).
+The scatter I'm modelling is the physical scatter of richness at fixed mass, and the mass estimates enter only as something I marginalise over.
+
+In this first version I assume the population of masses is described by the same
+prior $p(m)$ used in the inference, in which case the prior ratio cancels and the
+likelihood reduces to the richness residual alone.
 
 <details><summary>Likelihood</summary>
 
@@ -96,14 +96,17 @@ $$\ln\mathcal L=\sum_i\ln\!\Big[\tfrac1S\sum_s\exp\!\big(-\tfrac{(\log_{10}\lamb
 ![corner](plots/M2_forward_corner.png)
 ![scaling](plots/M2_forward_scaling.png)
 
-There is an instructive subtlety here. One might expect that using an uninformative
-mass prior would simply inflate the error bars, since the masses carry less
-information. Instead, the predicted-mass fit returns a redshift slope $G_z$ that is
-genuinely offset from the true-mass value. The reason is that the mass distribution
-itself depends on redshift — higher-$z$ clusters in the sample are systematically
-more massive — so a prior that ignores this $p(m\mid z)$ dependence pushes the
-inferred masses the wrong way as a function of $z$, and that error is reabsorbed
-into the redshift slope of the richness relation. The trend is clear in the data:
+Here I hit a problem. I'd expected that using an uninformative mass
+prior would simply inflate the error bars, since the masses carry less information.
+Instead, the predicted-mass fit returns a redshift slope $G_z$ that is genuinely
+offset from the true-mass value. 
+
+The reason, once I dug into it, is that the mass
+distribution itself depends on redshift — higher-$z$ clusters in the sample are
+systematically more massive — so a prior that ignores this $p(m\mid z)$ dependence
+pushes the inferred masses the wrong way as a function of $z$, and that error is
+reabsorbed into the redshift slope of the richness relation. The trend is clear in
+the data:
 
 ![m vs z](plots/output.png)
 
@@ -119,10 +122,12 @@ confuse if the mass prior is mis-specified:
 
 ![dag](graphs/graph_3.jpg)
 
-The fix suggested by the previous section is to let the population prior on mass
-depend on redshift, $\phi(m\mid z)$. Operationally this means reweighting each mass
-sample by how much more (or less) likely it is under the redshift-dependent
-population than under the flat inference prior.
+The fix this points to is to let the population prior on mass depend on redshift,
+$\phi(m\mid z)$. In practice I reweight each mass sample by how much more (or less)
+likely it is under the redshift-dependent population than under the flat inference
+prior. The predicted contour here uses the gnn_npe mass posteriors (as in every
+section); the only change from §2 is that the population prior is now
+redshift-dependent.
 
 <details><summary>Likelihood</summary>
 
@@ -141,12 +146,12 @@ $$\ln\mathcal L=\sum_i\ln\!\Big[\tfrac1S\sum_s\frac{\phi(m_{is}\mid z_i)}{p_{\rm
 ![corner](plots/M3_zprior_corner.png)
 ![scaling](plots/M3_zprior_scaling.png)
 
-Modelling $p(m\mid z)$ brings the redshift slope $G_z$ back into agreement. The
-mass slope $F_m$, however, is still biased. The remaining problem is that the
-residuals on richness and on the predicted mass are not independent: our mass
-predictions are imperfect and slightly biased, and that bias is correlated with
-richness. The next two sections model this explicitly — first the mass bias, then
-the correlation.
+Modelling $p(m\mid z)$ brings the redshift slope $G_z$ back into agreement. The mass
+slope $F_m$, though, is still biased. The problem that remains is that the residuals
+on richness and on the predicted mass are not independent: my mass predictions are
+imperfect and slightly biased, and that bias is correlated with richness. I model
+this explicitly over the next two sections — first the mass bias, then the
+correlation.
 
 ---
 
@@ -154,12 +159,12 @@ the correlation.
 
 ![dag](graphs/graph_4.jpg)
 
-We now treat the predicted mass $\hat m$ as a separate node: the true mass $m$
+Next I treat the predicted mass $\hat m$ as a separate node: the true mass $m$
 generates the estimate $\hat m$ through a calibration map (with its own offset,
 slope, and scatter), and $m,z$ generate the richness. A small calibration subset,
-for which we know the true masses, fixes the $m\!\to\!\hat m$ map and the estimate
-scatter; the latent mass is then marginalised over for the rest of the sample. By
-construction the richness of the calibration clusters is never used in the relation
+for which I know the true masses, fixes the $m\!\to\!\hat m$ map and the estimate
+scatter; I then marginalise over the latent mass for the rest of the sample. By
+construction I never use the richness of the calibration clusters in the relation
 term, so this calibration does not smuggle the answer in through the back door.
 
 <details><summary>Likelihood</summary>
@@ -187,20 +192,20 @@ $$\sum_{\rm main}\ln\frac{\int \mathcal N(\log_{10}\lambda_i;\langle\cdot\rangle
 
 Calibrating the mass map removes the offset but leaves the slope $F_m$ biased. The
 reason is that the model still assumes the estimate error $\eta_{\hat m}$ and the
-richness scatter $\eta_\lambda$ are independent at fixed mass. They are not. This is
-a correlated-errors-in-variables situation: when the error in the variable you
-regress on (here the inferred mass) is correlated with the error in the response
+richness scatter $\eta_\lambda$ are independent at fixed mass — and they are not.
+This is a correlated-errors-in-variables situation: when the error in the variable
+you regress on (here the inferred mass) is correlated with the error in the response
 (richness), the recovered slope is biased, because part of the shared scatter looks
-like a steeper relation. Physically the correlation is expected, since the mass
+like a steeper relation. Physically I expect this correlation, since the mass
 estimate uses the same galaxy information that sets the richness — directly as an
-input (`gnn_npe`) or implicitly through the S/N cluster selection. The residual
-correlation is large and highly significant:
+input (`gnn_npe`) or implicitly through the S/N cluster selection. When I check it,
+the residual correlation is large and highly significant:
 
 ![residual correlation](plots/diag_crosscorr.png)
 
 It is present within every narrow mass bin, so it is not an artefact of the overall
 mass trend, and it sits about 20σ above a permutation null that shuffles the mass
-residuals within each bin. This is the effect we model next.
+residuals within each bin. This is the effect I model next.
 
 ---
 
@@ -208,11 +213,13 @@ residuals within each bin. This is the effect we model next.
 
 ![dag](graphs/graph_5.jpg)
 
-We keep everything from the previous section but now let the estimate residual and
+I keep everything from the previous section but now let the estimate residual and
 the richness residual share a covariance at fixed true mass, with correlation
-coefficient $\rho$. Equivalently, knowing that a cluster scattered high in its mass
-estimate tells us it likely scattered high in richness too, and the model accounts
-for that instead of attributing it to the slope.
+coefficient $\rho$. Intuitively, knowing that a cluster scattered high in its mass
+estimate tells me it likely scattered high in richness too, and the model now
+accounts for that instead of attributing it to the slope. Correlated scatter
+between cluster observables at fixed mass is itself well documented (e.g. [Evrard et al. 2014](https://arxiv.org/abs/1403.1456)); here it is between the mass estimate and the
+richness.
 
 <details><summary>Likelihood (and the calibration of $\rho$)</summary>
 
@@ -223,10 +230,10 @@ $$\log_{10}\lambda\mid\hat m,m\ \sim\ \mathcal N\big(\langle\log_{10}\lambda\ran
 grid-marginalised over $m$ as before.
 
 Calibrating $\rho$: the main sample on its own cannot separate $\rho$ from $F_m$
-(they trade off along a degeneracy), so $\rho$ is measured on the calibration
-subset, where the true masses are known, as the partial correlation of the mass and
-richness residuals, and then held fixed while $\{\pi_0,F_m,G_z,a,b,\omega,
-\sigma_\lambda\}$ are fit jointly. The calibration richness enters only this
+(they trade off along a degeneracy), so I measure $\rho$ on the calibration subset,
+where the true masses are known, as the partial correlation of the mass and
+richness residuals, and then hold it fixed while fitting $\{\pi_0,F_m,G_z,a,b,
+\omega,\sigma_\lambda\}$ jointly. The calibration richness enters only this
 covariance, never the relation amplitude (a throwaway nuisance relation absorbs the
 calibration-subset mean).
 </details>
@@ -239,19 +246,19 @@ calibration-subset mean).
 ![corner](plots/M5_bivariate_corner.png)
 ![scaling](plots/M5_bivariate_scaling.png)
 
-Once the correlated residuals are included, the predicted-mass and true-mass
-contours come into agreement.
+Once I include the correlated residuals, the predicted-mass and true-mass contours
+finally come into agreement. This is the model I settled on.
 
 ---
 
 ## 6. The final relations
 
 The size of the residual correlation $\rho$ is not the same for every mass
-estimator. It is largest for the methods that read the galaxy content of a cluster
-— Graph-Net and the neural likelihood-estimation summaries — which is exactly the
-information that also sets the richness; it is close to zero for the purely
-dynamical estimators, which measure mass through velocities and are not tied to the
-galaxy counts:
+estimator. I find it is largest for the methods that read the galaxy content of a
+cluster — Graph-Net and the neural likelihood-estimation summaries — which is
+exactly the information that also sets the richness; it is close to zero for the
+purely dynamical estimators, which measure mass through velocities and are not tied
+to the galaxy counts:
 
 ![rho by model](plots/final_rho_by_model.png)
 
