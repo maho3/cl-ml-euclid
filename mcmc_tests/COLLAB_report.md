@@ -171,15 +171,14 @@ term, so this calibration does not smuggle the answer in through the back door.
 
 Latent mass $m\sim\phi(m\mid z)$; calibration map and forward relation
 $$\hat m=a+b\,(m-m_0)+\eta_{\hat m},\qquad \log_{10}\lambda=\pi_0+F_m(m-m_0)+G_z\zeta+\eta_\lambda,$$
-with residuals taken to be independent in this section,
-$\eta_{\hat m}\sim\mathcal N(0,\omega^2)$, $\eta_\lambda\sim\mathcal N(0,\sigma_\lambda^2)$.
+with the estimator scatter taken per-cluster, $\eta_{\hat m}\sim\mathcal N(0,\omega_i^2)$ with $\omega_i^2=\omega_0^2+\kappa^2\sigma_i^2$ (using the reported posterior width $\sigma_i$, so a tighter posterior weighs more), and the residuals independent in this section, $\eta_\lambda\sim\mathcal N(0,\sigma_\lambda^2)$.
 
-Calibration term (subset, true $m$ known): $\sum_{\rm cal}\ln\mathcal N(\hat m_i; a+b(m_i-m_0),\omega^2)$.
+Calibration term (subset, true $m$ known): $\sum_{\rm cal}\ln\mathcal N(\hat m_i; a+b(m_i-m_0),\omega_i^2)$.
 
 Relation term (main sample, latent $m$ grid-marginalised; the conditional form
 divides out $p(\hat m_i)$ so the estimate is used as information, not as data
 twice):
-$$\sum_{\rm main}\ln\frac{\int \mathcal N(\log_{10}\lambda_i;\langle\cdot\rangle)\,\mathcal N(\hat m_i;a+b(m-m_0),\omega^2)\,\phi(m\mid z_i)\,dm}{\int \mathcal N(\hat m_i;a+b(m-m_0),\omega^2)\,\phi(m\mid z_i)\,dm}$$
+$$\sum_{\rm main}\ln\frac{\int \mathcal N(\log_{10}\lambda_i;\langle\cdot\rangle)\,\mathcal N(\hat m_i;a+b(m-m_0),\omega_i^2)\,\phi(m\mid z_i)\,dm}{\int \mathcal N(\hat m_i;a+b(m-m_0),\omega_i^2)\,\phi(m\mid z_i)\,dm}$$
 </details>
 
 | | $\pi_0$ | $F_m$ | $G_z$ | $d$ |
@@ -223,17 +222,18 @@ richness.
 
 <details><summary>Likelihood (and the calibration of $\rho$)</summary>
 
-$$\begin{pmatrix}\eta_{\hat m}\\ \eta_\lambda\end{pmatrix}\sim\mathcal N\!\left(\mathbf 0,\ \begin{pmatrix}\omega^2 & \rho\,\omega\sigma_\lambda\\ \rho\,\omega\sigma_\lambda & \sigma_\lambda^2\end{pmatrix}\right)$$
+$$\begin{pmatrix}\eta_{\hat m}\\ \eta_\lambda\end{pmatrix}\sim\mathcal N\!\left(\mathbf 0,\ \begin{pmatrix}\omega_i^2 & \rho\,\omega_i\sigma_\lambda\\ \rho\,\omega_i\sigma_\lambda & \sigma_\lambda^2\end{pmatrix}\right),\qquad \omega_i^2=\omega_0^2+\kappa^2\sigma_i^2,$$
 
 so the relation term uses the bivariate conditional
-$$\log_{10}\lambda\mid\hat m,m\ \sim\ \mathcal N\big(\langle\log_{10}\lambda\rangle+\tfrac{\rho\sigma_\lambda}{\omega}(\hat m-a-b(m-m_0)),\ \sigma_\lambda^2(1-\rho^2)\big),$$
-grid-marginalised over $m$ as before.
+$$\log_{10}\lambda\mid\hat m,m\ \sim\ \mathcal N\big(\langle\log_{10}\lambda\rangle+\tfrac{\rho\sigma_\lambda}{\omega_i}(\hat m-a-b(m-m_0)),\ \sigma_\lambda^2(1-\rho^2)\big),$$
+grid-marginalised over $m$ as before. The per-cluster width $\omega_i$ is unchanged
+from §4 — the only difference here is the off-diagonal $\rho$.
 
 Calibrating $\rho$: the main sample on its own cannot separate $\rho$ from $F_m$
 (they trade off along a degeneracy), so I measure $\rho$ on the calibration subset,
 where the true masses are known, as the partial correlation of the mass and
 richness residuals, and then hold it fixed while fitting $\{\pi_0,F_m,G_z,a,b,
-\omega,\sigma_\lambda\}$ jointly. The calibration richness enters only this
+\omega_0,\kappa,\sigma_\lambda\}$ jointly. The calibration richness enters only this
 covariance, never the relation amplitude (a throwaway nuisance relation absorbs the
 calibration-subset mean).
 </details>
@@ -241,7 +241,7 @@ calibration-subset mean).
 | | $\pi_0$ | $F_m$ | $G_z$ | $d$ |
 |---|---|---|---|---|
 | true | 1.25 | 0.334 | 2.06 | |
-| predicted | 1.25 | 0.310 | 2.03 | 1.04 |
+| predicted | 1.25 | 0.313 | 2.03 | 0.95 |
 
 ![corner](plots/M5_bivariate_corner.png)
 ![scaling](plots/M5_bivariate_scaling.png)
@@ -267,12 +267,12 @@ gives:
 
 | model | $F_m$ (pred / true) | $\rho$ | $d$ |
 |---|---|---|---|
-| $M$–$\sigma$ | 0.140 / 0.339 | −0.12 | 4.0 |
-| $M$–$\lambda_{\rm spec}$ | 0.335 / 0.339 | 0.28 | 1.4 |
-| MAMPOSSt | 0.360 / 0.340 | 0.23 | 5.8 |
-| Galaxy-Net | 0.324 / 0.334 | 0.44 | 0.7 |
-| Summary-Net | 0.315 / 0.333 | 0.36 | 1.0 |
-| Graph-Net | 0.310 / 0.334 | 0.48 | 1.0 |
+| $M$–$\sigma$ | 0.175 / 0.339 | −0.12 | 2.9 |
+| $M$–$\lambda_{\rm spec}$ | 0.338 / 0.339 | 0.28 | 1.4 |
+| MAMPOSSt | 0.379 / 0.340 | 0.23 | 7.6 |
+| Galaxy-Net | 0.328 / 0.334 | 0.44 | 1.0 |
+| Summary-Net | 0.327 / 0.333 | 0.36 | 0.9 |
+| Graph-Net | 0.312 / 0.334 | 0.48 | 1.0 |
 
 The estimators that carry substantial information about the true mass — Graph-Net,
 Galaxy-Net, Summary-Net, and $M$–$\lambda_{\rm spec}$ — recover the true relation.

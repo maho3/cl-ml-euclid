@@ -49,14 +49,15 @@ def prepare(data, likelihood, m_ref, grid_n=301, grid_lo=11.5, grid_hi=16.0):
 
 
 def run_candidate(data, likelihood, m0, m_ref, settings=None, seed=0,
-                  dense_mass=True):
+                  dense_mass=True, max_tree_depth=None):
     settings = settings or FAST
     prepped = prepare(data, likelihood, m_ref)
 
     def model():
         likelihood.numpyro_model(prepped, m0, m_ref)
 
-    kernel = NUTS(model, dense_mass=dense_mass)
+    kw = {} if max_tree_depth is None else dict(max_tree_depth=max_tree_depth)
+    kernel = NUTS(model, dense_mass=dense_mass, **kw)
     mcmc = MCMC(kernel, num_warmup=settings['num_warmup'],
                 num_samples=settings['num_samples'],
                 num_chains=settings['num_chains'],

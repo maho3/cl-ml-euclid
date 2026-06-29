@@ -40,14 +40,27 @@ class BivariateForwardCal(Likelihood):
     main_channels = ('mu', 'sig', 'zeta', 'ell', 'mpi')
     uses_cal_richness = True  # authorized: cal ell calibrates rho/sigl only
 
-    def __init__(self, map='linear', rho_map='const', **cfg):
+    def __init__(self, map='linear', rho_map='const', rho_prior=None,
+                 width='const', **cfg):
         super().__init__(map=map, rho_map=rho_map, **cfg)
         self.map = map  # 'linear' | 'quadratic' (mu->m mean map)
         self.rho_map = rho_map  # 'const' | 'linear' (rho vs mass)
+        # width: 'const'  -> single global estimator scatter omega
+        #        'hetero' -> per-cluster omega_i^2 = omega0^2 + (kappa*sigma_i)^2,
+        #                    using the reported posterior width sigma_i. rho stays
+        #                    coupled to the per-cluster MEAN residual, so the
+        #                    de-biasing is undiluted (unlike the per-sample model).
+        self.width = width
+        # rho_prior: None -> flat Uniform(-0.95,0.95); (mu, sd) -> informative
+        # N(mu, sd) prior anchored on the calibration-subset rho estimate. The
+        # latter stops the F_m-rho degeneracy inflating rho for weak (low b_fwd)
+        # mass channels (msig/mamp), without changing well-determined channels.
+        self.rho_prior = rho_prior
         names = ['pi0', 'Fm', 'Gz', 'a', 'b_fwd']
         if map == 'quadratic':
             names.append('c_fwd')
-        names += ['omega', 'sigl']
+        names += ['omega0', 'kappa'] if width == 'hetero' else ['omega']
+        names += ['sigl']
         names += ['rho'] if rho_map == 'const' else ['rho0', 'rho1']
         names += ['c0', 'c1', 'c2']
         self.param_names = tuple(names)
@@ -71,11 +84,13 @@ class BivariateForwardCal(Likelihood):
 
     def numpyro_model(self, data, m0, m_ref):
         mu_main = data['mu_main']
+        sig_main = data['sig_main']
         zeta_main = data['zeta_main']
         ell_main = data['ell_main']
         mpi_main = data['mpi_main']
         sig_pi = data['sig_pi']
         mu_cal = data['mu_cal']
+        sig_cal = data['sig_cal']
         mtrue_cal = data['mtrue_cal']
         ell_cal = data['ell_cal']
         zeta_cal = data['zeta_cal']
@@ -90,10 +105,28 @@ class BivariateForwardCal(Likelihood):
                                        dist.TruncatedNormal(0.7, 0.3, low=0.1))
         if self.map == 'quadratic':
             pmap['c_fwd'] = numpyro.sample('c_fwd', dist.Normal(0.0, 0.5))
-        omega = numpyro.sample('omega', dist.HalfNormal(0.3))
+        if self.width == 'hetero':
+            omega0 = numpyro.sample('omega0', dist.HalfNormal(0.2))
+            kappa = numpyro.sample('kappa', dist.LogNormal(0.0, 0.3))
+            omega_cal = jnp.sqrt(omega0 ** 2 + (kappa * sig_cal) ** 2)   # (Ncal,)
+            omega_main = jnp.sqrt(omega0 ** 2 + (kappa * sig_main) ** 2)  # (Nmain,)
+        else:
+            omega = numpyro.sample('omega', dist.HalfNormal(0.3))
+            omega_cal = omega
+            omega_main = omega
         sigl = numpyro.sample('sigl', dist.HalfNormal(0.3))
         if self.rho_map == 'const':
-            pmap['rho'] = numpyro.sample('rho', dist.Uniform(-0.95, 0.95))
+            if self.rho_prior is None:
+                pmap['rho'] = numpyro.sample('rho', dist.Uniform(-0.95, 0.95))
+            elif isinstance(self.rho_prior, (int, float)):
+                # rho FIXED at its calibration value -- removes the F_m-rho
+                # degeneracy entirely (needed for weak channels: msig/mamp).
+                pmap['rho'] = numpyro.deterministic(
+                    'rho', jnp.asarray(float(self.rho_prior)))
+            else:
+                mu_r, sd_r = self.rho_prior
+                pmap['rho'] = numpyro.sample('rho', dist.TruncatedNormal(
+                    mu_r, sd_r, low=-0.95, high=0.95))
         else:
             pmap['rho0'] = numpyro.sample('rho0', dist.Uniform(-0.95, 0.95))
             pmap['rho1'] = numpyro.sample('rho1', dist.Normal(0.0, 0.5))
@@ -103,18 +136,19 @@ class BivariateForwardCal(Likelihood):
         c1 = numpyro.sample('c1', dist.Normal(1.0, 0.5))
         c2 = numpyro.sample('c2', dist.Normal(0.0, 1.0))
 
-        def cond_params(dm):
-            """beta and conditional sd at mass offset dm (rho may vary)."""
+        def cond_params(dm, omega_):
+            """beta and conditional sd; beta uses the (possibly per-cluster)
+            estimator scatter omega_, so a wider posterior gets a gentler slope."""
             r = self.rho_fn(dm, pmap)
-            return r * sigl / omega, jnp.sqrt(sigl ** 2 * (1.0 - r ** 2))
+            return r * sigl / omega_, jnp.sqrt(sigl ** 2 * (1.0 - r ** 2))
 
         # ---- Term 1: calibration subset, covariance only ----
         dm_cal = mtrue_cal - m_ref
         cal_mean_cal = self.cal_mean(dm_cal, pmap)
         r_mu_cal = mu_cal - cal_mean_cal
-        beta_cal, sd_cal = cond_params(dm_cal)
+        beta_cal, sd_cal = cond_params(dm_cal, omega_cal)
         # mu channel -> a, b, omega
-        ln_mu = lognorm(mu_cal, cal_mean_cal, omega)
+        ln_mu = lognorm(mu_cal, cal_mean_cal, omega_cal)
         # ell | mu channel -> rho, sigl (mean fully absorbed by nuisance c0,c1,c2)
         ell_mean_cal = c0 + c1 * dm_cal + c2 * zeta_cal + beta_cal * r_mu_cal
         ln_ell = lognorm(ell_cal, ell_mean_cal, sd_cal)
@@ -122,11 +156,12 @@ class BivariateForwardCal(Likelihood):
 
         # ---- Term 2: main sample, conditional grid-marginalized bivariate ----
         mg = m_grid[None, :]
+        om_main = omega_main[:, None] if self.width == 'hetero' else omega_main
         cal_mean_g = self.cal_mean(mg - m_ref, pmap)
         ln_pi = lognorm(mg, mpi_main[:, None], sig_pi)
-        ln_c = lognorm(mu_main[:, None], cal_mean_g, omega)
+        ln_c = lognorm(mu_main[:, None], cal_mean_g, om_main)
         r_mu_main = mu_main[:, None] - cal_mean_g
-        beta_g, sd_g = cond_params(mg - m_ref)
+        beta_g, sd_g = cond_params(mg - m_ref, om_main)
         rel = pi0 + Fm * (mg - m0) + Gz * zeta_main[:, None]
         ln_r = lognorm(ell_main[:, None], rel + beta_g * r_mu_main, sd_g)
         num = logsumexp(ln_pi + ln_c + ln_r, axis=1)
